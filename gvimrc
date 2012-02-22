@@ -3,7 +3,7 @@
 " An example for a Japanese version gvimrc file.
 " 日本語版のデフォルトGUI設定ファイル(gvimrc) - Vim7用試作
 "
-" Last Change: 10-Sep-2011.
+" Last Change: 22-Feb-2012.
 " Maintainer:  MURAOKA Taro <koron.kaoriya@gmail.com>
 "
 " 解説:
@@ -63,7 +63,7 @@ endif
 "---------------------------------------------------------------------------
 " カラー設定:
 "colorscheme morning
-colorscheme ron
+colorscheme pablo
 "---------------------------------------------------------------------------
 " フォント設定:
 "
@@ -177,8 +177,18 @@ endif
 " Copyright (C) 2011 KaoriYa/MURAOKA Taro
 
 "------自分で追加-----
+" 画面透過
 gui
 set transparency=220
 
+" エンコードをしふじすに
 set fenc=cp932	"cp932=ShiftJis
+
+" ｶﾚﾝﾄﾃﾞｨﾚｸﾄﾘ
+:source D:\vim73-kaoriya-win32\runtime\cd.vim
+
+"if has("gui")
+"    :source D:\vim73-kaoriya-win32\runtime\evim.vim
+"endif
+
 
