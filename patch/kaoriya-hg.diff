@@ -1,0 +1,2161 @@
+diff -r d6c709d07173 .hgignore
+--- a/.hgignore	Fri Sep 02 14:18:20 2011 +0200
++++ b/.hgignore	Sat Sep 03 10:06:10 2011 +0900
+@@ -51,3 +51,9 @@
+ src/testdir/small.vim 
+ src/testdir/tiny.vim 
+ src/testdir/test*.out
++
++# KaoriYa
++src/*.lib
++src/Obj/*/pathdef.c
++src/if_perl.c
++src/po/vim.pot
+diff -r d6c709d07173 .hgtags
+--- a/.hgtags	Fri Sep 02 14:18:20 2011 +0200
++++ b/.hgtags	Sat Sep 03 10:06:10 2011 +0900
+@@ -1476,6 +1476,12 @@
+ ff9ecf14efe3e2373f2b28fc3e32db4fe19e5ee1 v7-2-203
+ ffa17de19445569ea573550eef332323d83e70bd v7-0-016
+ fff7028d50c8a44a6285ab23b451d975764b8bd5 v7-2-296
++1aa9c79ff847cd945974dd6dec5172795ba6ad7a kaoriya-charspace
++fb2739bfd7c786b788ef7bcd988b61071d2ebd82 kaoriya-transparency
++c6ee0daceb5d8ed4c5d6f9c1d29a82c1d37a62f3 kaoriya-migemo
++43526075ec8a5a767fa358bf237a3a76274cb394 kaoriya-uimfep
++ca39e374098eaf681455af63250b8a44c1b03a48 kaoriya-guessenc
++f5cd4f6439016178e4509f4d1186317a0395fa87 kaoriya-message
+ 62e8d93241cd15962f895da4788f21b514238b14 v7-3-142
+ 632f43801ddb568f872599499fdcfd9522f8c13f v7-3-143
+ 322a5c8d392bd47ceebd24cd21dacf70409fcc91 v7-3-144
+diff -r d6c709d07173 runtime/doc/options.txt
+--- a/runtime/doc/options.txt	Fri Sep 02 14:18:20 2011 +0200
++++ b/runtime/doc/options.txt	Sat Sep 03 10:06:10 2011 +0900
+@@ -678,6 +678,9 @@
+ 	"single":	Use the same width as characters in US-ASCII.  This is
+ 			expected by most users.
+ 	"double":	Use twice the width of ASCII characters.
++	"auto":		Use obtained width from system.
++			{only for Win NT/2K systems, currently}
++
+ 							*E834* *E835*
+ 	The value "double" cannot be used if 'listchars' or 'fillchars'
+ 	contains a character that would be double width.
+@@ -697,6 +700,10 @@
+ 	when the system locale is set to one of CJK locales.  See Unicode
+ 	Standard Annex #11 (http://www.unicode.org/reports/tr11).
+ 
++	On some systems, we can use width for a character which defined by
++	font design.  If you use such a system try "auto" for this option.
++	It will give you more nice result for a font which you select.
++
+ 			*'antialias'* *'anti'* *'noantialias'* *'noanti'*
+ 'antialias' 'anti'	boolean (default: off)
+ 			global
+@@ -3665,6 +3672,9 @@
+ 	  'F'	Add a footer.  Only for Motif.  See |gui-footer|.
+ 
+ 
++	  'C'	Remove caption (title) bar.  Support Win32 only.
++
++
+ 						*'guipty'* *'noguipty'*
+ 'guipty'		boolean	(default on)
+ 			global
+diff -r d6c709d07173 runtime/syntax/2html.vim
+--- a/runtime/syntax/2html.vim	Fri Sep 02 14:18:20 2011 +0200
++++ b/runtime/syntax/2html.vim	Sat Sep 03 10:06:10 2011 +0900
+@@ -1148,7 +1148,7 @@
+ endwhile
+ 
+ " Add hyperlinks
+-%s+\(https\=://\S\{-}\)\(\([.,;:}]\=\(\s\|$\)\)\|[\\"'<>]\|&gt;\|&lt;\|&quot;\)+<a href="\1">\1</a>\2+ge
++%s+\(\%(https\=\|ftp\)://\S\{-}\)\(\([.,;:}]\=\(\s\|$\)\)\|[\\"'<>]\|&gt;\|&lt;\|&quot;\)+<a href="\1">\1</a>\2+ge
+ 
+ " The DTD
+ if s:settings.use_xhtml
+diff -r d6c709d07173 runtime/syntax/java.vim
+--- a/runtime/syntax/java.vim	Fri Sep 02 14:18:20 2011 +0200
++++ b/runtime/syntax/java.vim	Sat Sep 03 10:06:10 2011 +0900
+@@ -1,3 +1,4 @@
++scriptencoding cp932
+ " Vim syntax file " Language:	  Java
+ " Maintainer:	Claudio Fleiner <claudio@fleiner.com>
+ " URL:		http://www.fleiner.com/vim/syntax/java.vim
+@@ -162,7 +163,7 @@
+   syntax spell default
+ 
+   syn region  javaDocComment	start="/\*\*"  end="\*/" keepend contains=javaCommentTitle,@javaHtml,javaDocTags,javaDocSeeTag,javaTodo,@Spell
+-  syn region  javaCommentTitle	contained matchgroup=javaDocComment start="/\*\*"   matchgroup=javaCommentTitle keepend end="\.$" end="\.[ \t\r<&]"me=e-1 end="[^{]@"me=s-2,he=s-1 end="\*/"me=s-1,he=s-1 contains=@javaHtml,javaCommentStar,javaTodo,@Spell,javaDocTags,javaDocSeeTag
++  syn region  javaCommentTitle	contained matchgroup=javaDocComment start="/\*\*"   matchgroup=javaCommentTitle keepend end="B" end="\.$" end="\.[ \t\r<&]"me=e-1 end="[^{]@"me=s-2,he=s-1 end="\*/"me=s-1,he=s-1 contains=@javaHtml,javaCommentStar,javaTodo,@Spell,javaDocTags,javaDocSeeTag
+ 
+   syn region javaDocTags	 contained start="{@\(link\|linkplain\|inherit[Dd]oc\|doc[rR]oot\|value\)" end="}"
+   syn match  javaDocTags	 contained "@\(param\|exception\|throws\|since\)\s\+\S\+" contains=javaDocParam
+diff -r d6c709d07173 runtime/tutor/tutor.ja.euc
+--- a/runtime/tutor/tutor.ja.euc	Fri Sep 02 14:18:20 2011 +0200
++++ b/runtime/tutor/tutor.ja.euc	Sat Sep 03 10:06:10 2011 +0900
+@@ -259,7 +259,7 @@
+ 
+   1. °Ê²¼¤Î ---> ¤È¼¨¤µ¤ì¤¿¹Ô¤ÎÀèÆ¬¤Ë¥«¡¼¥½¥ë¤ò°ÜÆ°¤·¤Þ¤¹¡£
+ 
+-  2. 2dw ¤ò¥¿¥¤¥×¤·¤ÆÃ±¸ì2¤ÄÊ¬°ÜÆ°¤·¤Þ¤¹¡£
++  2. 2dw ¤ò¥¿¥¤¥×¤·¤ÆÃ±¸ì2¤ÄÊ¬ºï½ü¤·¤Þ¤¹¡£
+ 
+   3. 3e ¤ò¥¿¥¤¥×¤·¤Æ3¤ÄÌÜ¤ÎÃ±¸ì¤Î½ªÃ¼¤Ë°ÜÆ°¤·¤Þ¤¹¡£
+ 
+diff -r d6c709d07173 runtime/tutor/tutor.ja.sjis
+--- a/runtime/tutor/tutor.ja.sjis	Fri Sep 02 14:18:20 2011 +0200
++++ b/runtime/tutor/tutor.ja.sjis	Sat Sep 03 10:06:10 2011 +0900
+@@ -259,7 +259,7 @@
+ 
+   1. ˆÈ‰º‚Ì ---> ‚ÆŽ¦‚³‚ê‚½s‚Ìæ“ª‚ÉƒJ[ƒ\ƒ‹‚ðˆÚ“®‚µ‚Ü‚·B
+ 
+-  2. 2dw ‚ðƒ^ƒCƒv‚µ‚Ä’PŒê2‚Â•ªˆÚ“®‚µ‚Ü‚·B
++  2. 2dw ‚ðƒ^ƒCƒv‚µ‚Ä’PŒê2‚Â•ªíœ‚µ‚Ü‚·B
+ 
+   3. 3e ‚ðƒ^ƒCƒv‚µ‚Ä3‚Â–Ú‚Ì’PŒê‚ÌI’[‚ÉˆÚ“®‚µ‚Ü‚·B
+ 
+diff -r d6c709d07173 runtime/tutor/tutor.ja.utf-8
+--- a/runtime/tutor/tutor.ja.utf-8	Fri Sep 02 14:18:20 2011 +0200
++++ b/runtime/tutor/tutor.ja.utf-8	Sat Sep 03 10:06:10 2011 +0900
+@@ -259,7 +259,7 @@
+ 
+   1. ä»¥ä¸‹ã® ---> ã¨ç¤ºã•ã‚ŒãŸè¡Œã®å…ˆé ­ã«ã‚«ãƒ¼ã‚½ãƒ«ã‚’ç§»å‹•ã—ã¾ã™ã€‚
+ 
+-  2. 2dw ã‚’ã‚¿ã‚¤ãƒ—ã—ã¦å˜èªž2ã¤åˆ†ç§»å‹•ã—ã¾ã™ã€‚
++  2. 2dw ã‚’ã‚¿ã‚¤ãƒ—ã—ã¦å˜èªž2ã¤åˆ†å‰Šé™¤ã—ã¾ã™ã€‚
+ 
+   3. 3e ã‚’ã‚¿ã‚¤ãƒ—ã—ã¦3ã¤ç›®ã®å˜èªžã®çµ‚ç«¯ã«ç§»å‹•ã—ã¾ã™ã€‚
+ 
+diff -r d6c709d07173 src/GvimExt/gvimext.cpp
+--- a/src/GvimExt/gvimext.cpp	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/GvimExt/gvimext.cpp	Sat Sep 03 10:06:10 2011 +0900
+@@ -105,6 +105,30 @@
+ getRuntimeDir(char *buf)
+ {
+     int		idx;
++    HKEY	hkey;
++
++    /*
++     * Get runtime path from the registry if entry exists.
++     */
++    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Vim\\Gvim", 0,
++		KEY_READ, &hkey) == ERROR_SUCCESS)
++    {
++	DWORD dwLen = MAX_PATH;
++	LONG result = RegQueryValueEx(hkey, "runtime", 0, NULL, (BYTE*)buf,
++		&dwLen);
++
++	RegCloseKey(hkey);
++	if (result == ERROR_SUCCESS)
++	{
++	    /* Add directory separater if needs */
++	    if (dwLen > 1 && !strchr("\\/", buf[dwLen - 2]))
++	    {
++		buf[dwLen - 1]	= '\\';
++		buf[dwLen    ]	= '\0';
++	    }
++	    return; /* success to obtain runtime entry */
++	}
++    }
+ 
+     getGvimName(buf, 1);
+     if (buf[0] != 0)
+diff -r d6c709d07173 src/Make_mvc.mak
+--- a/src/Make_mvc.mak	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/Make_mvc.mak	Sat Sep 03 10:06:10 2011 +0900
+@@ -155,9 +155,9 @@
+ # interfaces.
+ # If you change something else, do "make clean" first!
+ !if "$(GUI)" == "yes"
+-OBJDIR = .\ObjG
++OBJDIR = .\Obj\G
+ !else
+-OBJDIR = .\ObjC
++OBJDIR = .\Obj\C
+ !endif
+ !if "$(OLE)" == "yes"
+ OBJDIR = $(OBJDIR)O
+@@ -186,6 +186,9 @@
+ !if "$(DEBUG)" == "yes"
+ OBJDIR = $(OBJDIR)d
+ !endif
++!ifdef PROCESSOR_ARCHITECTURE
++OBJDIR = $(OBJDIR)-$(PROCESSOR_ARCHITECTURE)
++!endif
+ 
+ # Win32.mak requires that CPU be set appropriately.
+ # To cross-compile for Win64, set CPU=AMD64 or CPU=IA64.
+@@ -602,6 +605,14 @@
+ CFLAGS = $(CFLAGS) -DDYNAMIC_GETTEXT
+ !endif
+ 
++#
++# Support Migemo
++#
++!ifdef MIGEMO
++!message Migemo supported - will be dynamic linked.
++CFLAGS = $(CFLAGS) -DDYNAMIC_MIGEMO
++!endif
++
+ # TCL interface
+ !ifdef TCL
+ !ifndef TCL_VER
+@@ -902,6 +913,7 @@
+ 		$(LUA_OBJ) $(MZSCHEME_OBJ) $(PERL_OBJ) $(PYTHON_OBJ) $(PYTHON3_OBJ) $(RUBY_OBJ) \
+ 		$(TCL_OBJ) $(SNIFF_OBJ) $(CSCOPE_OBJ) $(NETBEANS_OBJ) \
+ 		$(XPM_OBJ) $(OUTDIR)\version.obj $(LINKARGS2)
++	IF EXIST $@.manifest mt -nologo -manifest $@.manifest gvim.exe.mnf -outputresource:$@;1
+ 
+ $(VIM): $(VIM).exe
+ 
+@@ -916,14 +928,17 @@
+ 
+ uninstal.exe: uninstal.c
+ 	$(CC) /nologo -DNDEBUG -DWIN32 uninstal.c shell32.lib advapi32.lib
++	IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+ 
+ vimrun.exe: vimrun.c
+ 	$(CC) /nologo -DNDEBUG vimrun.c
++	IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+ 
+ xxd/xxd.exe: xxd/xxd.c
+ 	cd xxd
+ 	$(MAKE) /NOLOGO -f Make_mvc.mak
+ 	cd ..
++	IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+ 
+ GvimExt/gvimext.dll: GvimExt/gvimext.cpp GvimExt/gvimext.rc GvimExt/gvimext.h
+ 	cd GvimExt
+@@ -941,6 +956,8 @@
+ 	- if exist $(OUTDIR)/nul $(DEL_TREE) $(OUTDIR)
+ 	- if exist *.obj del *.obj
+ 	- if exist $(VIM).exe del $(VIM).exe
++	- if exist $(VIM).exe.manifest del $(VIM).exe.manifest
++	- if exist $(VIM).lib del $(VIM).lib
+ 	- if exist $(VIM).ilk del $(VIM).ilk
+ 	- if exist $(VIM).pdb del $(VIM).pdb
+ 	- if exist $(VIM).map del $(VIM).map
+@@ -1140,7 +1157,7 @@
+ 	$(CC) $(CFLAGS) $(XPM_INC) xpm_w32.c
+ 
+ $(OUTDIR)/vim.res:	$(OUTDIR) vim.rc gvim.exe.mnf version.h tools.bmp \
+-				tearoff.bmp vim.ico vim_error.ico \
++				tearoff.bmp vim2.ico vim_error.ico \
+ 				vim_alert.ico vim_info.ico vim_quest.ico
+ 	$(RC) /l 0x409 /Fo$(OUTDIR)/vim.res $(RCFLAGS) vim.rc
+ 
+diff -r d6c709d07173 src/buffer.c
+--- a/src/buffer.c	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/buffer.c	Sat Sep 03 10:06:10 2011 +0900
+@@ -270,6 +270,31 @@
+ 	    aucmd_prepbuf(&aco, old_curbuf);
+ #endif
+ 	    do_modelines(0);
++
++	    /* specified ff and enc, bin in modelines */
++	    if (file_ff_differs(curbuf, TRUE))
++	    {
++		/* reload buffer */
++		if (eap)
++		{
++		    /* restore ++ff and ++enc, ++bin if specified */
++#ifdef FEAT_MBYTE
++		    if (eap->force_enc)
++		    {
++			char_u *fenc = enc_canonize(eap->cmd + eap->force_enc);
++			if (fenc) {
++			    vim_free(curbuf->b_p_fenc);
++			    curbuf->b_p_fenc = fenc;
++			}
++		    }
++#endif
++		    if (eap->force_ff)
++			set_fileformat(eap->force_ff, OPT_LOCAL);
++		    if (eap->force_bin)
++			curbuf->b_p_bin = eap->force_bin;
++		}
++		buf_reload(curbuf, curbuf->b_orig_mode);
++	    }
+ 	    curbuf->b_flags &= ~(BF_CHECK_RO | BF_NEVERLOADED);
+ 
+ #ifdef FEAT_AUTOCMD
+diff -r d6c709d07173 src/config.h.in
+--- a/src/config.h.in	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/config.h.in	Sat Sep 03 10:06:10 2011 +0900
+@@ -171,6 +171,7 @@
+ #undef HAVE_LSTAT
+ #undef HAVE_MEMCMP
+ #undef HAVE_MEMSET
++#undef HAVE_MIGEMO
+ #undef HAVE_MKDTEMP
+ #undef HAVE_NANOSLEEP
+ #undef HAVE_OPENDIR
+@@ -231,6 +232,7 @@
+ #undef HAVE_LIBGEN_H
+ #undef HAVE_LIBINTL_H
+ #undef HAVE_LOCALE_H
++#undef HAVE_MIGEMO_H
+ #undef HAVE_MATH_H
+ #undef HAVE_NDIR_H
+ #undef HAVE_POLL_H
+@@ -384,6 +386,9 @@
+ /* Define if you want to include XIM support. */
+ #undef FEAT_XIM
+ 
++/* Define if you want to include UIMFEP support. */
++#undef FEAT_UIMFEP
++
+ /* Define if you want to include Hangul input support. */
+ #undef FEAT_HANGULIN
+ 
+diff -r d6c709d07173 src/configure.in
+--- a/src/configure.in	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/configure.in	Sat Sep 03 10:06:10 2011 +0900
+@@ -2420,6 +2420,19 @@
+   fi
+ fi
+ 
++dnl Check --disable-uimfep option.
++AC_MSG_CHECKING(--disable-uimfep argument)
++AC_ARG_ENABLE(uimfep,
++	[  --disable-uimfep        Don't support UIMFEP.],,
++	[enable_uimfep="yes"])
++if test "$enable_uimfep" = "yes"; then
++  AC_MSG_RESULT(no)
++  AC_DEFINE(FEAT_UIMFEP)
++else
++  AC_MSG_RESULT(yes)
++fi
++
++
+ dnl Checks for libraries and include files.
+ 
+ AC_CACHE_CHECK([whether toupper is broken], [vim_cv_toupper_broken],
+@@ -2478,7 +2491,7 @@
+ AC_CHECK_HEADERS(stdarg.h stdint.h stdlib.h string.h \
+ 	sys/select.h sys/utsname.h termcap.h fcntl.h \
+ 	sgtty.h sys/ioctl.h sys/time.h sys/types.h \
+-	termio.h iconv.h inttypes.h langinfo.h math.h \
++	termio.h iconv.h inttypes.h langinfo.h math.h migemo.h \
+ 	unistd.h stropts.h errno.h sys/resource.h \
+ 	sys/systeminfo.h locale.h sys/stream.h termios.h \
+ 	libc.h sys/statfs.h poll.h sys/poll.h pwd.h \
+@@ -3475,6 +3488,19 @@
+   AC_MSG_RESULT(yes)
+ fi
+ 
++dnl Check for C/Migemo (regexp pattern expansion).
++AC_MSG_CHECKING(--disable-migemo argument)
++AC_ARG_ENABLE(migemo,
++	[  --disable-migemo        Don't support C/Migemo.], ,
++	[enable_migemo="yes"])
++if test "$enable_migemo" = "yes"; then
++  AC_MSG_RESULT(no)
++  AC_CHECK_LIB(migemo, migemo_open,
++	[LIBS="$LIBS -lmigemo" AC_DEFINE(HAVE_MIGEMO)],,)
++else
++  AC_MSG_RESULT(yes)
++fi
++
+ dnl Check for dynamic linking loader
+ AC_CHECK_HEADER(dlfcn.h, DLL=dlfcn.h, [AC_CHECK_HEADER(dl.h, DLL=dl.h)])
+ if test x${DLL} = xdlfcn.h; then
+diff -r d6c709d07173 src/eval.c
+--- a/src/eval.c	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/eval.c	Sat Sep 03 10:06:10 2011 +0900
+@@ -634,6 +634,7 @@
+ static void f_matchlist __ARGS((typval_T *argvars, typval_T *rettv));
+ static void f_matchstr __ARGS((typval_T *argvars, typval_T *rettv));
+ static void f_max __ARGS((typval_T *argvars, typval_T *rettv));
++static void f_migemo __ARGS((typval_T *argvars, typval_T *rettv));
+ static void f_min __ARGS((typval_T *argvars, typval_T *rettv));
+ #ifdef vim_mkdir
+ static void f_mkdir __ARGS((typval_T *argvars, typval_T *rettv));
+@@ -7879,6 +7880,7 @@
+     {"matchlist",	2, 4, f_matchlist},
+     {"matchstr",	2, 4, f_matchstr},
+     {"max",		1, 1, f_max},
++    {"migemo",		1, 1, f_migemo},
+     {"min",		1, 1, f_min},
+ #ifdef vim_mkdir
+     {"mkdir",		1, 3, f_mkdir},
+@@ -11959,6 +11961,7 @@
+ #ifdef FEAT_GETTEXT
+ 	"gettext",
+ #endif
++	"guess_encode",
+ #ifdef FEAT_GUI
+ 	"gui",
+ #endif
+@@ -12003,6 +12006,7 @@
+ #ifdef FEAT_JUMPLIST
+ 	"jumplist",
+ #endif
++	"kaoriya",
+ #ifdef FEAT_KEYMAP
+ 	"keymap",
+ #endif
+@@ -12032,6 +12036,11 @@
+ #ifdef FEAT_MENU
+ 	"menu",
+ #endif
++#ifdef USE_MIGEMO
++# ifndef DYNAMIC_MIGEMO
++	"migemo",
++# endif
++#endif
+ #ifdef FEAT_SESSION
+ 	"mksession",
+ #endif
+@@ -12337,6 +12346,10 @@
+ 	else if (STRICMP(name, "win95") == 0)
+ 	    n = mch_windows95();
+ #endif
++#if defined(USE_MIGEMO)
++	else if (STRICMP(name, "migemo") == 0)
++	    n = migemo_enabled() ? TRUE : FALSE;
++#endif
+ #ifdef FEAT_NETBEANS_INTG
+ 	else if (STRICMP(name, "netbeans_enabled") == 0)
+ 	    n = netbeans_active();
+@@ -13897,6 +13910,24 @@
+ }
+ 
+ /*
++ * "migemo()" function
++ */
++    static void
++f_migemo(argvars, rettv)
++    typval_T	*argvars;
++    typval_T	*rettv;
++{
++    char_u* arg = get_tv_string(&argvars[0]);
++
++    rettv->v_type = VAR_STRING;
++#ifdef USE_MIGEMO
++    rettv->vval.v_string = query_migemo(arg);
++#else
++    rettv->vval.v_string = vim_strsave(arg);
++#endif
++}
++
++/*
+  * "min()" function
+  */
+     static void
+diff -r d6c709d07173 src/ex_getln.c
+--- a/src/ex_getln.c	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/ex_getln.c	Sat Sep 03 10:06:10 2011 +0900
+@@ -190,7 +190,17 @@
+      * custom status line may invoke ":normal". */
+     struct cmdline_info save_ccline;
+ #endif
+-
++#ifdef USE_MIGEMO
++    int		migemo_enabled = 0;
++#endif
++
++#ifdef USE_MIGEMO
++    if (count < 0)
++    {
++	migemo_enabled = 1;
++	count = -count;
++    }
++#endif
+ #ifdef FEAT_SNIFF
+     want_sniff_request = 0;
+ #endif
+@@ -1745,15 +1755,22 @@
+ 		i = 0;
+ 	    else
+ 	    {
++		int search_options = (SEARCH_KEEP + SEARCH_OPT
++			+ SEARCH_NOOF + SEARCH_PEEK);
++
+ 		cursor_off();		/* so the user knows we're busy */
+ 		out_flush();
+ 		++emsg_off;    /* So it doesn't beep if bad expr */
++#ifdef USE_MIGEMO
++		if (migemo_enabled)
++		    search_options |= SEARCH_MIGEMO;
++#endif
+ #ifdef FEAT_RELTIME
+ 		/* Set the time limit to half a second. */
+ 		profile_setlimit(500L, &tm);
+ #endif
+ 		i = do_search(NULL, firstc, ccline.cmdbuff, count,
+-			SEARCH_KEEP + SEARCH_OPT + SEARCH_NOOF + SEARCH_PEEK,
++			search_options,
+ #ifdef FEAT_RELTIME
+ 			&tm
+ #else
+@@ -5317,6 +5334,13 @@
+ 	if (STRCMP(str, p) == 0
+ 		&& (type != HIST_SEARCH || sep == p[STRLEN(p) + 1]))
+ 	{
++	    char_u *p = history[type][i].hisstr;
++
++	    /* For search history, equation check includes first characters
++	     * equation. */
++	    if (type == HIST_SEARCH && sep != p[STRLEN(p) + 1])
++		break;
++
+ 	    if (!move_to_front)
+ 		return TRUE;
+ 	    last_i = i;
+diff -r d6c709d07173 src/feature.h
+--- a/src/feature.h	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/feature.h	Sat Sep 03 10:06:10 2011 +0900
+@@ -1303,3 +1303,13 @@
+ #ifdef FEAT_NORMAL
+ # define FEAT_PERSISTENT_UNDO
+ #endif
++
++/*
++ * +migemo		Regexp pattern expansion.  See:
++ * 				http://migemo.namazu.org/
++ * 				http://www.kaoriya.net/
++ */
++/* Use migemo_open() when it's available */
++#if (defined(HAVE_MIGEMO_H) && defined(HAVE_MIGEMO)) || defined(DYNAMIC_MIGEMO)
++# define USE_MIGEMO
++#endif
+diff -r d6c709d07173 src/fileio.c
+--- a/src/fileio.c	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/fileio.c	Sat Sep 03 10:06:10 2011 +0900
+@@ -191,6 +191,240 @@
+     msg_scrolled_ign = FALSE;
+ }
+ 
++typedef struct encode_state encode_state;
++typedef int (*encode_check)(encode_state* state, char_u d);
++struct encode_state
++{
++    char_u  name[32];
++    int	    enable;
++    int	    score;
++    int	    mode;
++    encode_check check;
++};
++
++    static int
++guess_cp932_check(encode_state* state, char_u d)
++{
++    switch (state->mode)
++    {
++	default:
++	case 0:
++	    if ((0x81 <= d && d <= 0x9f) || (0xe0 <= d && d <= 0xf0))
++		state->mode = 1;
++	    else if (d == 0x80 || 0xf1 <= d)
++		return 1;
++	    else
++		++state->score;
++	    break;
++	case 1:
++	    if ((0x40 <= d && d <= 0x7e) || (0x80 <= d && d <= 0xfc))
++	    {
++		++state->score;
++		state->mode = 0;
++	    }
++	    else
++		return 1;
++	    break;
++    }
++    return 0;
++}
++
++    static int
++guess_eucjp_check(encode_state* state, char_u d)
++{
++    int is_euc_range = (0xa1 <= d && d <= 0xfe) ? 1 : 0;
++    switch (state->mode)
++    {
++	default:
++	case 0:
++	    if (is_euc_range)
++		state->mode = 1;
++	    else if (d < 0x80)
++		++state->score;
++	    break;
++	case 1:
++	    if (is_euc_range)
++	    {
++		++state->score;
++		state->mode = 0;
++	    }
++	    else
++		return 1;
++	    break;
++    }
++    return 0;
++}
++
++    static int
++guess_iso2022jp_check(encode_state* state, char_u d)
++{
++    /* TODO: Implement me. */
++    return 1;
++}
++
++    static int
++guess_utf8_check(encode_state* state, char_u d)
++{
++    if (state->mode < 1)
++    {
++	if ((d & 0x80) != 0)
++	{
++	    if ((d & 0xe0) == 0xc0)
++		state->mode = 1;
++	    else if ((d & 0xf0) == 0xe0)
++		state->mode = 2;
++	    else if ((d & 0xf8) == 0xf0)
++		state->mode = 3;
++	    else if ((d & 0xfc) == 0xf8)
++		state->mode = 4;
++	    else if ((d & 0xfe) == 0xfc)
++		state->mode = 5;
++	    else
++		return 1;
++	}
++	else
++	    ++state->score;
++    }
++    else
++    {
++	if ((d & 0xc0) == 0x80)
++	{
++	    --state->mode;
++	    if (!state->mode == 0)
++		++state->score;
++	}
++	else
++	    return 1;
++    }
++    return 0;
++}
++
++/*
++ * return 0 if no guess was made.  otherwise return 1.
++ */
++    static int
++guess_encode(char_u** fenc, int* fenc_alloced, char_u* fname)
++{
++    char_u* newenc = NULL;
++    FILE*   fp = NULL;
++    encode_state enc_table[] = {
++	{ "cp932",	    1, 0, 0, guess_cp932_check },
++	{ "euc-jp",	    1, 0, 0, guess_eucjp_check },
++	{ "iso-2022-jp",    1, 0, 0, guess_iso2022jp_check },
++	{ "utf-8",	    1, 0, 0, guess_utf8_check },
++    };
++    int	    enc_count;
++    int	    enc_available; /* count of encodings be available. */
++    char_u  readbuf[1024];
++    int	    readlen;
++    int	    i, j;
++    char_u  d;
++    encode_state* pstate;
++
++    if (p_verbose >= 1)
++    {
++	verbose_enter();
++	smsg((char_u*)"guess_encode:");
++	smsg((char_u*)"    init: fenc=%s alloced=%d fname=%s\n",
++		*fenc, *fenc_alloced, fname);
++	verbose_leave();
++    }
++
++    /* open a file. */
++    if (!fname)
++	return 0; /* not support to read from stdin. */
++    fp = mch_fopen(fname, "r");
++    if (!fp)
++	return 0; /* raise an error when failed to open file. */
++
++    /* initiate states of encode. */
++    enc_count = sizeof(enc_table) / sizeof(enc_table[0]);
++    enc_available = enc_count;
++
++    /*
++     * read bytes from the file and pass it to guess engines, until the
++     * encoding is determined.
++     */
++    while (enc_available > 1 && !feof(fp))
++    {
++	readlen = fread(readbuf, 1, sizeof(readbuf), fp);
++	if (p_verbose >= 2)
++	{
++	    verbose_enter();
++	    smsg((char_u*)"    read: len=%d\n", readlen);
++	    verbose_leave();
++	}
++	if (readlen <= 0)
++	    break;
++	for (i = 0; enc_available > 1 && i < readlen; ++i)
++	{
++	    d = readbuf[i];
++	    /* pass 'd' to all available encodings. */
++	    for (j = 0; enc_available > 1 && j < enc_count; ++j)
++	    {
++		pstate = &enc_table[j];
++		if (!pstate->enable || !pstate->check)
++		    continue;
++		switch (pstate->check(pstate, d))
++		{
++		    case 0: /* keep "alive" state */
++			break;
++		    case 1: /* disable this encode. */
++			pstate->enable = 0;
++			--enc_available;
++			break;
++		    case 2: /* make this encode primary one. */
++			enc_available = 1;
++			newenc = pstate->name;
++			break;
++		}
++	    }
++	}
++    }
++
++    /* determine newenc which have max score. */
++    if (newenc == NULL)
++    {
++	int minscore = -1;
++
++	for (i = 0; i < enc_count; ++i)
++	{
++	    pstate = &enc_table[i];
++	    if (p_verbose >= 1)
++	    {
++		verbose_enter();
++		smsg("    check: name=%s enable=%d score=%d\n",
++			pstate->name, pstate->enable, pstate->score);
++		verbose_leave();
++	    }
++	    if (pstate->enable
++		    && (minscore < 0 || minscore > pstate->score))
++	    {
++		newenc = pstate->name;
++		minscore = pstate->score;
++	    }
++	}
++    }
++
++    /* close a file. */
++    fclose(fp);
++
++    if (newenc)
++    {
++	if (p_verbose >= 1)
++	{
++	    verbose_enter();
++	    smsg("    result: newenc=%s\n", newenc);
++	    verbose_leave();
++	}
++	if (*fenc_alloced)
++	    vim_free(*fenc);
++	*fenc = vim_strsave(newenc);
++	*fenc_alloced = TRUE;
++    }
++    return 1;
++}
++
+ /*
+  * Read lines from file "fname" into the buffer after line "from".
+  *
+@@ -1068,6 +1302,12 @@
+     }
+ 
+     /*
++     * Try to guess encoding of the file.
++     */
++    if (STRICMP(fenc, "guess") == 0)
++	guess_encode(&fenc, &fenc_alloced, fname);
++
++    /*
+      * Conversion may be required when the encoding of the file is different
+      * from 'encoding' or 'encoding' is UTF-16, UCS-2 or UCS-4.
+      */
+diff -r d6c709d07173 src/gui.c
+--- a/src/gui.c	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/gui.c	Sat Sep 03 10:06:10 2011 +0900
+@@ -3165,6 +3165,8 @@
+     static int	prev_tearoff = -1;
+     int		using_tearoff = FALSE;
+ #endif
++    static int	prev_nocaption = -1;
++    int		using_caption = TRUE;
+ 
+     char_u	*p;
+     int		i;
+@@ -3242,6 +3244,9 @@
+ 		using_tearoff = TRUE;
+ #endif
+ 		break;
++	    case GO_NOCAPTION:
++		using_caption = FALSE;
++		break;
+ 	    default:
+ 		/* Ignore options that are not supported */
+ 		break;
+@@ -3352,6 +3357,14 @@
+ 	    prev_tearoff = using_tearoff;
+ 	}
+ #endif
++	if (using_caption != prev_nocaption)
++	{
++#if defined(WIN3264)
++	    gui_mch_show_caption(using_caption);
++#endif
++	    prev_nocaption = using_caption;
++	    need_set_size = TRUE;
++	}
+ 	if (need_set_size != 0)
+ 	{
+ #ifdef FEAT_GUI_GTK
+diff -r d6c709d07173 src/gui_w32.c
+--- a/src/gui_w32.c	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/gui_w32.c	Sat Sep 03 10:06:10 2011 +0900
+@@ -409,6 +409,19 @@
+ #ifdef FEAT_NETBEANS_INTG
+ int WSInitialized = FALSE; /* WinSock is initialized */
+ #endif
++
++/*
++ * For Transparent Window (for only Windows 2000)
++ */
++#define USE_LAYERED_WINDOW 1
++#if USE_LAYERED_WINDOW
++# define WS_EX_LAYERED 0x80000
++# define LWA_ALPHA 2
++typedef DWORD (WINAPI *FWINLAYER)(HWND hwnd, DWORD crKey, BYTE bAlpha,
++	DWORD dwFlags);
++static void w32_set_transparency(HWND hwnd, BYTE bAlpha);
++#endif /* USE_LAYERED_WINDOW */
++
+ /*
+  * Return TRUE when running under Windows NT 3.x or Win32s, both of which have
+  * less fancy GUI APIs.
+@@ -430,6 +443,38 @@
+     return (os_version.dwPlatformId == VER_PLATFORM_WIN32s);
+ }
+ 
++    static int
++get_caption_height(void)
++{
++    /*
++     * A window's caption includes extra 1 dot margin.  When caption is
++     * removed the margin also be removed.  So we must return -1 when
++     * caption is diabled.
++     */
++    return GetWindowLong(s_hwnd, GWL_STYLE) & WS_CAPTION ?
++	GetSystemMetrics(SM_CYCAPTION) : -1;
++}
++
++    void
++gui_mch_show_caption(int show)
++{
++    LONG style, newstyle;
++
++    /* Remove caption when title is null. */
++    style = newstyle = GetWindowLong(s_hwnd, GWL_STYLE);
++    if (show && !(style & WS_CAPTION))
++	newstyle = style | WS_CAPTION;
++    else if (!show && (style & WS_CAPTION))
++	newstyle = style & ~WS_CAPTION;
++    if (newstyle != style)
++    {
++	SetWindowLong(s_hwnd, GWL_STYLE, newstyle);
++	SetWindowPos(s_hwnd, NULL, 0, 0, 0, 0,
++		SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
++	gui_set_shellsize(FALSE, FALSE, RESIZE_BOTH);
++    }
++}
++
+ #ifdef FEAT_MENU
+ /*
+  * Figure out how high the menu bar is at the moment.
+@@ -461,7 +506,7 @@
+ 	    {
+ 		RECT r1, r2;
+ 		int frameht = GetSystemMetrics(SM_CYFRAME);
+-		int capht = GetSystemMetrics(SM_CYCAPTION);
++ 		int capht = get_caption_height();
+ 
+ 		/* get window rect of s_hwnd
+ 		 * get client rect of s_hwnd
+@@ -1251,6 +1296,16 @@
+ 		argv[*argc] = NULL;
+ 		break;	/* enough? */
+ 	    }
++
++	{
++	    WSADATA wsaData;
++	    int wsaerr;
++
++	    /* Init WinSock */
++	    wsaerr = WSAStartup(MAKEWORD(2, 2), &wsaData);
++	    if (wsaerr == 0)
++		WSInitialized = TRUE;
++	}
+     }
+ #endif
+ 
+@@ -1448,6 +1503,8 @@
+     if (s_hwnd == NULL)
+ 	return FAIL;
+ 
++    w32_set_transparency(s_hwnd, 255);
++
+ #ifdef GLOBAL_IME
+     global_ime_init(atom, s_hwnd);
+ #endif
+@@ -1680,7 +1737,7 @@
+     /* compute the size of the outside of the window */
+     win_width = width + GetSystemMetrics(SM_CXFRAME) * 2;
+     win_height = height + GetSystemMetrics(SM_CYFRAME) * 2
+-			+ GetSystemMetrics(SM_CYCAPTION)
++			+ get_caption_height()
+ #ifdef FEAT_MENU
+ 			+ gui_mswin_get_menu_height(FALSE)
+ #endif
+@@ -1800,6 +1857,46 @@
+     gui.currSpColor = color;
+ }
+ 
++#if USE_LAYERED_WINDOW
++    void
++w32_set_transparency(HWND hwnd, BYTE bAlpha)
++{
++    FWINLAYER pfLayer;
++    HANDLE hDll;
++
++    if (!hwnd)
++	hwnd = s_hwnd;
++
++    /* Turn off transpareny */
++    if (bAlpha == 255)
++    {
++	SetWindowLong(hwnd, GWL_EXSTYLE, ~WS_EX_LAYERED &
++		GetWindowLong(hwnd, GWL_EXSTYLE));
++	return;
++    }
++
++    /* Obtain pointer to function set transparecy rate */
++    if (!(hDll = LoadLibrary("user32.dll")))
++	return;
++    pfLayer = (FWINLAYER)GetProcAddress(hDll, "SetLayeredWindowAttributes");
++
++    if (pfLayer)
++    {
++	SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED |
++		GetWindowLong(hwnd, GWL_EXSTYLE));
++	pfLayer(hwnd, 0, bAlpha, LWA_ALPHA);
++    }
++
++    FreeLibrary(hDll);
++}
++
++    void
++gui_mch_set_transparency(int alpha)
++{
++    w32_set_transparency(NULL, (BYTE)alpha);
++}
++#endif /* USE_LAYERED_WINDOW */
++
+ #if defined(FEAT_MBYTE) && defined(FEAT_MBYTE_IME)
+ /*
+  * Multi-byte handling, originally by Sung-Hoon Baek.
+@@ -2541,7 +2638,7 @@
+      * the window size can be made to fit on the screen. */
+     *screen_h = workarea_rect.bottom - workarea_rect.top
+ 		- GetSystemMetrics(SM_CYFRAME) * 2
+-		- GetSystemMetrics(SM_CYCAPTION)
++		- get_caption_height()
+ #ifdef FEAT_MENU
+ 		- gui_mswin_get_menu_height(FALSE)
+ #endif
+@@ -4827,3 +4924,54 @@
+ 	WSInitialized = TRUE;
+ }
+ #endif
++
++#ifdef USE_AMBIWIDTH_AUTO
++#define CHARWIDE_CACHESIZE 65536
++static GuiFont last_font = 0;
++
++    int
++gui_mch_get_charwidth(int c)
++{
++    static char cache[CHARWIDE_CACHESIZE];
++    GuiFont usingfont = gui.wide_font ? gui.wide_font : gui.norm_font;
++
++    /* Check validity of charwide cache */
++    if (last_font != usingfont)
++    {
++	/* Update cache. -1 is mark for uninitialized cell */
++	TRACE("Charwide cache will be updated (base=%d)\n", gui.char_width);
++	last_font = usingfont;
++	memset(cache, -1, sizeof(cache));
++    }
++    if (usingfont && 0 <= c && c < CHARWIDE_CACHESIZE)
++    {
++	if (cache[c] >= 0)
++	    return cache[c]; /* Use cached value */
++	else
++	{
++	    /* 
++	     * Get true character width in dot, convert to cells and save
++	     * it.
++	     */
++	    int	    len;
++	    ABC	    fontABC;
++	    HFONT   hfntOld = SelectFont(s_hdc, usingfont);
++
++	    if (!GetCharABCWidthsW(s_hdc, c, c, &fontABC) ||
++		    (len = fontABC.abcA + fontABC.abcB + fontABC.abcC) <= 0)
++	    {
++		TRACE("GetCharABCWidthsW() failed for %08X\n", c);
++		cache[c] = 0;
++	    }
++	    else
++		cache[c] = (char)((len + (gui.char_width >> 1))
++			/ gui.char_width);
++	    SelectFont(s_hdc, hfntOld);
++
++	    return cache[c];
++	}
++    }
++    else
++	return 0;
++}
++#endif
+diff -r d6c709d07173 src/gui_w48.c
+--- a/src/gui_w48.c	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/gui_w48.c	Sat Sep 03 10:06:10 2011 +0900
+@@ -132,6 +132,7 @@
+ static void _OnPaint( HWND hwnd);
+ static void clear_rect(RECT *rcp);
+ static int gui_mswin_get_menu_height(int fix_window);
++static int get_caption_height(void);
+ 
+ static WORD		s_dlgfntheight;		/* height of the dialog font */
+ static WORD		s_dlgfntwidth;		/* width of the dialog font */
+@@ -1291,7 +1292,7 @@
+     TEXTMETRIC tm;
+ 
+     GetTextMetrics(hdc, &tm);
+-    gui.char_width = tm.tmAveCharWidth + tm.tmOverhang;
++    gui.char_width = tm.tmAveCharWidth + tm.tmOverhang + p_charspace;
+ 
+     gui.char_height = tm.tmHeight
+ #ifndef MSWIN16_FASTTEXT
+@@ -2888,7 +2889,7 @@
+ 	+ GetSystemMetrics(SM_CXFRAME) * 2;
+     base_height = gui_get_base_height()
+ 	+ GetSystemMetrics(SM_CYFRAME) * 2
+-	+ GetSystemMetrics(SM_CYCAPTION)
++	+ get_caption_height()
+ #ifdef FEAT_MENU
+ 	+ gui_mswin_get_menu_height(FALSE)
+ #endif
+@@ -3184,7 +3185,7 @@
+ 			- GetSystemMetrics(SM_CXFRAME) * 2,
+ 		     rect.bottom - rect.top
+ 			- GetSystemMetrics(SM_CYFRAME) * 2
+-			- GetSystemMetrics(SM_CYCAPTION)
++			- get_caption_height()
+ #ifdef FEAT_MENU
+ 			- gui_mswin_get_menu_height(FALSE)
+ #endif
+@@ -3275,28 +3276,24 @@
+ 
+ # if defined(FEAT_MBYTE) && defined(WIN3264)
+ /*
+- * Wide version of convert_filter().  Keep in sync!
++ * Wide version of convert_filter().  Keep to using convert_filter().
+  */
+     static WCHAR *
+ convert_filterW(char_u *s)
+ {
++    /* Pre-declaration is required. */
++    char_u * convert_filter(char_u *s);
++
+     WCHAR	*res;
+-    unsigned	s_len = (unsigned)STRLEN(s);
+-    unsigned	i;
+-
+-    res = (WCHAR *)alloc((s_len + 3) * sizeof(WCHAR));
+-    if (res != NULL)
+-    {
+-	for (i = 0; i < s_len; ++i)
+-	    if (s[i] == '\t' || s[i] == '\n')
+-		res[i] = '\0';
+-	    else
+-		res[i] = s[i];
+-	res[s_len] = NUL;
+-	/* Add two extra NULs to make sure it's properly terminated. */
+-	res[s_len + 1] = NUL;
+-	res[s_len + 2] = NUL;
+-    }
++    char_u	*tmp;
++    int		len;
++
++    tmp = convert_filter(s);
++    if (tmp == NULL)
++	return NULL;
++    len = (int)STRLEN(s) + 3;
++    res = enc_to_utf16(tmp, &len);
++    vim_free(tmp);
+     return res;
+ }
+ 
+diff -r d6c709d07173 src/main.c
+--- a/src/main.c	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/main.c	Sat Sep 03 10:06:10 2011 +0900
+@@ -1417,6 +1417,9 @@
+ #ifdef FEAT_PERL
+     perl_end();
+ #endif
++#ifdef USE_MIGEMO
++    reset_migemo(TRUE);
++#endif
+ #if defined(USE_ICONV) && defined(DYNAMIC_ICONV)
+     iconv_end();
+ #endif
+diff -r d6c709d07173 src/mbyte.c
+--- a/src/mbyte.c	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/mbyte.c	Sat Sep 03 10:06:10 2011 +0900
+@@ -113,6 +113,12 @@
+ # include <wchar.h>
+ #endif
+ 
++#if defined(FEAT_UIMFEP) || defined(PROTO)
++static int uimfep_lastmode = 1;
++static void uimfep_set_active __ARGS((int active));
++static int uimfep_get_status __ARGS((void));
++#endif
++
+ #if 0
+ /* This has been disabled, because several people reported problems with the
+  * wcwidth() and iswprint() library functions, esp. for Hebrew. */
+@@ -1452,6 +1458,19 @@
+ 	{0x100000, 0x10fffd}
+     };
+ 
++#ifdef USE_AMBIWIDTH_AUTO
++    if (gui.in_use && *p_ambw == 'a')
++    {
++	int cell;
++
++	/* This is required by screen.c implicitly. */
++	if (c == 0)
++	    return 1;
++	if ((cell = gui_mch_get_charwidth(c)) > 0)
++	    return cell;
++    }
++#endif
++
+     if (c >= 0x100)
+     {
+ #ifdef USE_WCHAR_FUNCTIONS
+@@ -4386,6 +4405,14 @@
+ {
+     int was_active;
+ 
++#ifdef FEAT_UIMFEP
++    if (!gui.in_use)
++    {
++	uimfep_set_active(active);
++	return;
++    }
++#endif
++
+     was_active = !!im_is_active;
+     im_is_active = (active && !p_imdisable);
+ 
+@@ -5206,6 +5233,10 @@
+     int
+ im_get_status(void)
+ {
++#ifdef FEAT_UIMFEP
++    if (!gui.in_use)
++	return uimfep_get_status();
++#endif
+     return im_is_active;
+ }
+ 
+@@ -5239,7 +5270,13 @@
+     int		active;
+ {
+     if (xic == NULL)
++    {
++#ifdef FEAT_UIMFEP
++	if (!gui.in_use)
++	    uimfep_set_active(active);
++#endif
+ 	return;
++    }
+ 
+     /* If 'imdisable' is set, XIM is never active. */
+     if (p_imdisable)
+@@ -5674,6 +5711,14 @@
+     int
+ im_get_status()
+ {
++#ifdef FEAT_UIMFEP
++    if (!gui.in_use)
++	return uimfep_get_status();
++#endif
++#ifdef FEAT_GUI_GTK
++    if (xim_input_style & (int)GDK_IM_PREEDIT_CALLBACKS)
++	return xim_can_preediting;
++#endif
+     return xim_has_focus;
+ }
+ 
+@@ -6231,3 +6276,66 @@
+     return retval;
+ }
+ #endif
++
++#if defined(FEAT_UIMFEP)
++    static void
++uimfep_set_active(int active)
++{
++    int mustfree = 0;
++    char_u *setmode;
++    setmode = vim_getenv("UIM_FEP_SETMODE", &mustfree);
++    if (setmode != NULL)
++    {
++	FILE *fp = fopen(setmode, "w");
++	if (fp)
++	{
++	    fprintf(fp, "%d\n", active ? uimfep_lastmode : 0);
++	    fflush(fp);
++	    fclose(fp);
++	}
++    }
++    if (mustfree)
++	vim_free(setmode);
++}
++
++    static int
++uimfep_get_status(void)
++{
++    int mustfree = 0;
++    int mode = 0;
++    char_u *getmode;
++    getmode = vim_getenv("UIM_FEP_GETMODE", &mustfree);
++    if (getmode != NULL)
++    {
++	FILE *fp = fopen(getmode, "r");
++	if (fp)
++	{
++	    char_u buf[99];
++	    if (fgets(buf, sizeof(buf), fp))
++		mode = atoi(buf);
++	    fclose(fp);
++	}
++    }
++    if (mustfree)
++	vim_free(getmode);
++    if (mode != 0)
++	uimfep_lastmode = mode;
++    return mode != 0;
++}
++
++# if defined(USE_IM_CONTROL) && (!defined(FEAT_XIM) \
++	&& !defined(FEAT_MBYTE_IME) && !defined(GLOBAL_IME))
++    void
++im_set_active(int active)
++{
++    uimfep_set_active(active);
++}
++
++    int
++im_get_status(void)
++{
++    return uimfep_get_status();
++}
++# endif
++
++#endif /* defined(FEAT_UIMFEP) */
+diff -r d6c709d07173 src/misc2.c
+--- a/src/misc2.c	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/misc2.c	Sat Sep 03 10:06:10 2011 +0900
+@@ -1876,36 +1876,17 @@
+ 
+     p = string;
+ #ifdef FEAT_MBYTE
+-    if (enc_utf8 && c >= 0x80)
++    if (has_mbyte)
+     {
++	char_u	bytes[MB_MAXBYTES];
++	int	len = (*mb_char2bytes)(c, bytes);
++
+ 	while (*p != NUL)
+ 	{
+-	    if (utf_ptr2char(p) == c)
++	    if (p[0] == bytes[0]
++		    && (len <= 1 || vim_memcmp(p, bytes, len) == 0))
+ 		return p;
+-	    p += (*mb_ptr2len)(p);
+-	}
+-	return NULL;
+-    }
+-    if (enc_dbcs != 0 && c > 255)
+-    {
+-	int	n2 = c & 0xff;
+-
+-	c = ((unsigned)c >> 8) & 0xff;
+-	while ((b = *p) != NUL)
+-	{
+-	    if (b == c && p[1] == n2)
+-		return p;
+-	    p += (*mb_ptr2len)(p);
+-	}
+-	return NULL;
+-    }
+-    if (has_mbyte)
+-    {
+-	while ((b = *p) != NUL)
+-	{
+-	    if (b == c)
+-		return p;
+-	    p += (*mb_ptr2len)(p);
++	    mb_ptr_adv(p);
+ 	}
+ 	return NULL;
+     }
+diff -r d6c709d07173 src/normal.c
+--- a/src/normal.c	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/normal.c	Sat Sep 03 10:06:10 2011 +0900
+@@ -6287,7 +6287,12 @@
+ 	return;
+     }
+ 
++#ifdef USE_MIGEMO
++    cap->searchbuf = getcmdline(cap->cmdchar,
++	    (cap->nchar == 'g' ? -cap->count1 : cap->count1), 0);
++#else
+     cap->searchbuf = getcmdline(cap->cmdchar, cap->count1, 0);
++#endif
+ 
+     if (cap->searchbuf == NULL)
+     {
+@@ -6296,6 +6301,9 @@
+     }
+ 
+     normal_search(cap, cap->cmdchar, cap->searchbuf,
++#ifdef USE_MIGEMO
++	    (cap->nchar == 'g' ? SEARCH_MIGEMO : 0) |
++#endif
+ 						(cap->arg ? 0 : SEARCH_MARK));
+ }
+ 
+@@ -8237,7 +8245,9 @@
+     case '~':
+     case 'u':
+     case 'U':
++#ifndef USE_MIGEMO
+     case '?':
++#endif
+     case '@':
+ 	nv_operator(cap);
+ 	break;
+@@ -8334,6 +8344,25 @@
+ 							 FALSE, FALSE, FALSE);
+ 	break;
+ 
++#ifdef USE_MIGEMO
++    case '/':
++	cap->cmdchar = '/';
++	cap->nchar = 'g';
++	nv_search(cap);
++	break;
++
++    case '?':
++	if (curbuf->b_p_migemo)
++	{
++	    cap->cmdchar = '?';
++	    cap->nchar = 'g';
++	    nv_search(cap);
++	}
++	else
++	    nv_operator(cap);
++	break;
++#endif
++
+     default:
+ 	clearopbeep(oap);
+ 	break;
+diff -r d6c709d07173 src/option.c
+--- a/src/option.c	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/option.c	Sat Sep 03 10:06:10 2011 +0900
+@@ -136,6 +136,9 @@
+ # define PV_LISP	OPT_BUF(BV_LISP)
+ #endif
+ #define PV_MA		OPT_BUF(BV_MA)
++#ifdef USE_MIGEMO
++# define PV_MIG		OPT_BUF(BV_MIG)
++#endif
+ #define PV_ML		OPT_BUF(BV_ML)
+ #define PV_MOD		OPT_BUF(BV_MOD)
+ #define PV_MPS		OPT_BUF(BV_MPS)
+@@ -711,6 +714,14 @@
+ 			    {(char_u *)0L, (char_u *)0L}
+ #endif
+ 			    SCRIPTID_INIT},
++    {"charspace",   "csp",  P_NUM|P_NODEFAULT|P_VIM|P_RCLR,
++#ifdef FEAT_GUI
++			    (char_u *)&p_charspace, PV_NONE,
++#else
++			    (char_u *)NULL, PV_NONE,
++#endif
++			    {(char_u *)0L, (char_u *)0L}
++			    SCRIPTID_INIT},
+     {"cindent",	    "cin",  P_BOOL|P_VI_DEF|P_VIM,
+ #ifdef FEAT_CINDENT
+ 			    (char_u *)&p_cin, PV_CIN,
+@@ -1779,6 +1790,14 @@
+     {"mesg",	    NULL,   P_BOOL|P_VI_DEF,
+ 			    (char_u *)NULL, PV_NONE,
+ 			    {(char_u *)FALSE, (char_u *)0L} SCRIPTID_INIT},
++#ifdef USE_MIGEMO
++    {"migemo",	    "mgm",  P_BOOL|P_VI_DEF|P_VIM,
++			    (char_u *)&p_migemo, PV_MIG,
++			    {(char_u *)FALSE, (char_u *)0L} SCRIPTID_INIT},
++    {"migemodict",  "mgd",  P_STRING|P_EXPAND|P_VI_DEF|P_VIM,
++			    (char_u *)&p_migdict, PV_NONE,
++			    {(char_u *)"", (char_u *)0L} SCRIPTID_INIT},
++#endif /* USE_MIGEMO */
+     {"mkspellmem",  "msm",  P_STRING|P_VI_DEF|P_EXPAND|P_SECURE,
+ #ifdef FEAT_SPELL
+ 			    (char_u *)&p_msm, PV_NONE,
+@@ -2600,6 +2619,11 @@
+ 			    (char_u *)&p_tbis, PV_NONE,
+ 			    {(char_u *)"small", (char_u *)0L} SCRIPTID_INIT},
+ #endif
++#ifdef USE_TRANSPARENCY
++    {"transparency", "tra", P_NUM|P_VI_DEF,
++			    (char_u *)&p_transparency, PV_NONE,
++			    {(char_u *)255L, (char_u *)0L}},
++#endif
+     {"ttimeout",    NULL,   P_BOOL|P_VI_DEF|P_VIM,
+ 			    (char_u *)&p_ttimeout, PV_NONE,
+ 			    {(char_u *)FALSE, (char_u *)0L} SCRIPTID_INIT},
+@@ -2920,7 +2944,11 @@
+ #define PARAM_COUNT (sizeof(options) / sizeof(struct vimoption))
+ 
+ #ifdef FEAT_MBYTE
+-static char *(p_ambw_values[]) = {"single", "double", NULL};
++static char *(p_ambw_values[]) = {"single", "double",
++# ifdef USE_AMBIWIDTH_AUTO
++    "auto",
++# endif
++    NULL};
+ #endif
+ static char *(p_bg_values[]) = {"light", "dark", NULL};
+ static char *(p_nf_values[]) = {"octal", "hex", "alpha", NULL};
+@@ -5515,6 +5543,11 @@
+ 	free_string_option(*p);
+ 	*p = s;
+     }
++
++#ifdef USE_MIGEMO
++    if (varp == &p_migdict)
++	reset_migemo(FALSE);
++#endif
+ }
+ 
+ /*
+@@ -8148,7 +8181,7 @@
+ #endif
+ 
+ #ifdef FEAT_GUI
+-    else if (pp == &p_linespace)
++    else if (pp == &p_linespace || pp == &p_charspace)
+     {
+ 	/* Recompute gui.char_height and resize the Vim window to keep the
+ 	 * same number of lines. */
+@@ -8214,6 +8247,15 @@
+     }
+ #endif
+ 
++#ifdef USE_TRANSPARENCY
++    else if ((long *)varp == &p_transparency)
++    {
++	if (p_transparency < 1 || p_transparency > 255)
++	    p_transparency = 255;
++	gui_mch_set_transparency(p_transparency);
++    }
++#endif
++
+     else if (pp == &curbuf->b_p_iminsert)
+     {
+ 	if (curbuf->b_p_iminsert < 0 || curbuf->b_p_iminsert > B_IMODE_LAST)
+@@ -9655,6 +9697,9 @@
+ 	case PV_ML:	return (char_u *)&(curbuf->b_p_ml);
+ 	case PV_MPS:	return (char_u *)&(curbuf->b_p_mps);
+ 	case PV_MA:	return (char_u *)&(curbuf->b_p_ma);
++#ifdef USE_MIGEMO
++	case PV_MIG:	return (char_u *)&(curbuf->b_p_migemo);
++#endif
+ 	case PV_MOD:	return (char_u *)&(curbuf->b_changed);
+ 	case PV_NF:	return (char_u *)&(curbuf->b_p_nf);
+ 	case PV_PI:	return (char_u *)&(curbuf->b_p_pi);
+@@ -10047,6 +10092,11 @@
+ 	    buf->b_p_iminsert = p_iminsert;
+ 	    buf->b_p_imsearch = p_imsearch;
+ 
++#ifdef USE_MIGEMO
++	    /* This is migemo extension */
++	    buf->b_p_migemo = p_migemo;
++#endif
++
+ 	    /* options that are normally global but also have a local value
+ 	     * are not copied, start using the global value */
+ 	    buf->b_p_ar = -1;
+diff -r d6c709d07173 src/option.h
+--- a/src/option.h	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/option.h	Sat Sep 03 10:06:10 2011 +0900
+@@ -234,7 +234,8 @@
+ #define GO_TOOLBAR	'T'		/* add toolbar */
+ #define GO_FOOTER	'F'		/* add footer */
+ #define GO_VERTICAL	'v'		/* arrange dialog buttons vertically */
+-#define GO_ALL		"aAbcefFghilmMprtTv" /* all possible flags for 'go' */
++#define GO_NOCAPTION	'C'		/* remove caption bar */
++#define GO_ALL		"aAbcCefFghilmMprtTv" /* all possible flags for 'go' */
+ 
+ /* flags for 'comments' option */
+ #define COM_NEST	'n'		/* comments strings nest */
+@@ -374,6 +375,9 @@
+ EXTERN char_u	*p_ccv;		/* 'charconvert' */
+ # endif
+ #endif
++#ifdef FEAT_GUI
++EXTERN long	p_charspace;	/* 'charspace' */
++#endif
+ #ifdef FEAT_CMDWIN
+ EXTERN char_u	*p_cedit;	/* 'cedit' */
+ EXTERN long	p_cwh;		/* 'cmdwinheight' */
+@@ -616,6 +620,10 @@
+ #ifdef FEAT_MENU
+ EXTERN long	p_mis;		/* 'menuitems' */
+ #endif
++#ifdef USE_MIGEMO
++EXTERN int	p_migemo;	/* 'migemo' */
++EXTERN char_u	*p_migdict;	/* 'migemodict' */
++#endif
+ #ifdef FEAT_SPELL
+ EXTERN char_u	*p_msm;		/* 'mkspellmem' */
+ #endif
+@@ -788,6 +796,9 @@
+ #ifdef FEAT_INS_EXPAND
+ EXTERN char_u	*p_tsr;		/* 'thesaurus' */
+ #endif
++#ifdef USE_TRANSPARENCY
++EXTERN long	p_transparency;	/* 'transparency'*/
++#endif
+ EXTERN int	p_ttimeout;	/* 'ttimeout' */
+ EXTERN long	p_ttm;		/* 'ttimeoutlen' */
+ EXTERN int	p_tbi;		/* 'ttybuiltin' */
+@@ -983,6 +994,9 @@
+     , BV_LISP
+ #endif
+     , BV_MA
++#ifdef USE_MIGEMO
++    , BV_MIG
++#endif
+     , BV_ML
+     , BV_MOD
+     , BV_MPS
+diff -r d6c709d07173 src/os_mswin.c
+--- a/src/os_mswin.c	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/os_mswin.c	Sat Sep 03 10:06:10 2011 +0900
+@@ -2348,12 +2348,28 @@
+     int
+ mch_print_text_out(char_u *p, int len)
+ {
++    int do_out = 1;
+ #ifdef FEAT_PROPORTIONAL_FONTS
+     SIZE	sz;
+ #endif
+ 
+-    TextOut(prt_dlg.hDC, prt_pos_x + prt_left_margin,
+-					  prt_pos_y + prt_top_margin, p, len);
++    /* A space character without background color is not needed to be drawn.
++     * This is expected to reduce data size and speed up when printing. */
++    if (GetBkMode(prt_dlg.hDC) == TRANSPARENT)
++    {
++	int i;
++
++	do_out = 0;
++	for (i = 0; i < len; ++i)
++	    if (p[i] != ' ')
++	    {
++		do_out = 1;
++		break;
++	    }
++    }
++    if (do_out)
++	TextOut(prt_dlg.hDC, prt_pos_x + prt_left_margin, prt_pos_y +
++		prt_top_margin, p, len);
+ #ifndef FEAT_PROPORTIONAL_FONTS
+     prt_pos_x += len * prt_tm.tmAveCharWidth;
+     return (prt_pos_x + prt_left_margin + prt_tm.tmAveCharWidth
+diff -r d6c709d07173 src/os_win32.h
+--- a/src/os_win32.h	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/os_win32.h	Sat Sep 03 10:06:10 2011 +0900
+@@ -83,6 +83,7 @@
+ 
+ #ifdef FEAT_GUI_W32
+ # define NO_CONSOLE		/* don't included console-only code */
++# define USE_TRANSPARENCY
+ #endif
+ 
+ /* toupper() is not really broken, but it's very slow.	Probably because of
+diff -r d6c709d07173 src/po/Make_mvc.mak
+--- a/src/po/Make_mvc.mak	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/po/Make_mvc.mak	Sat Sep 03 10:06:10 2011 +0900
+@@ -105,6 +105,10 @@
+ 	if not exist $(INSTALLDIR) $(MKD) $(INSTALLDIR)
+ 	$(CP) $(LANGUAGE).mo $(INSTALLDIR)\$(PACKAGE).mo
+ 
++install-all: all
++	FOR %%l IN ($(LANGUAGES)) DO @IF NOT EXIST $(VIMRUNTIME)\lang\%%l\LC_MESSAGES $(MKD) $(VIMRUNTIME)\lang\%%l\LC_MESSAGES
++	FOR %%l IN ($(LANGUAGES)) DO @$(CP) %%l.mo $(VIMRUNTIME)\lang\%%l\LC_MESSAGES\$(PACKAGE).mo
++
+ clean:
+ 	$(RM) *.mo
+ 	$(RM) *.pot
+diff -r d6c709d07173 src/proto/gui_w32.pro
+--- a/src/proto/gui_w32.pro	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/proto/gui_w32.pro	Sat Sep 03 10:06:10 2011 +0900
+@@ -58,6 +58,7 @@
+ char_u *gui_mch_browse __ARGS((int saving, char_u *title, char_u *dflt, char_u *ext, char_u *initdir, char_u *filter));
+ int get_cmd_args __ARGS((char *prog, char *cmdline, char ***argvp, char **tofree));
+ int gui_is_win32s __ARGS((void));
++void gui_mch_show_caption __ARGS((int show));
+ void gui_mch_set_parent __ARGS((char *title));
+ void gui_mch_prepare __ARGS((int *argc, char **argv));
+ int gui_mch_init __ARGS((void));
+@@ -67,12 +68,14 @@
+ void gui_mch_set_fg_color __ARGS((guicolor_T color));
+ void gui_mch_set_bg_color __ARGS((guicolor_T color));
+ void gui_mch_set_sp_color __ARGS((guicolor_T color));
++void gui_mch_set_transparency __ARGS((int alpha));
+ void im_set_font __ARGS((LOGFONT *lf));
+ void im_set_position __ARGS((int row, int col));
+ void im_set_active __ARGS((int active));
+ int im_get_status __ARGS((void));
+ void gui_mch_draw_string __ARGS((int row, int col, char_u *text, int len, int flags));
+ void gui_mch_flush __ARGS((void));
++int gui_mch_get_charwidth __ARGS((int c));
+ void gui_mch_get_screen_dimensions __ARGS((int *screen_w, int *screen_h));
+ void gui_mch_add_menu __ARGS((vimmenu_T *menu, int pos));
+ void gui_mch_show_popupmenu __ARGS((vimmenu_T *menu));
+diff -r d6c709d07173 src/proto/search.pro
+--- a/src/proto/search.pro	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/proto/search.pro	Sat Sep 03 10:06:10 2011 +0900
+@@ -13,6 +13,9 @@
+ void last_pat_prog __ARGS((regmmatch_T *regmatch));
+ int searchit __ARGS((win_T *win, buf_T *buf, pos_T *pos, int dir, char_u *pat, long count, int options, int pat_use, linenr_T stop_lnum, proftime_T *tm));
+ void set_search_direction __ARGS((int cdir));
++int migemo_enabled __ARGS((void));
++void reset_migemo __ARGS((int lastcall));
++char_u* query_migemo __ARGS((char_u* str));
+ int do_search __ARGS((oparg_T *oap, int dirc, char_u *pat, long count, int options, proftime_T *tm));
+ int search_for_exact_line __ARGS((buf_T *buf, pos_T *pos, int dir, char_u *pat));
+ int searchc __ARGS((cmdarg_T *cap, int t_cmd));
+diff -r d6c709d07173 src/search.c
+--- a/src/search.c	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/search.c	Sat Sep 03 10:06:10 2011 +0900
+@@ -1040,6 +1040,305 @@
+ }
+ #endif
+ 
++#ifdef USE_MIGEMO
++# define MIGEMO_QUERY_MAXSIZE 40960
++/* Load migemo header */
++# ifndef DYNAMIC_MIGEMO
++#  include <migemo.h>
++# else /* DYNAMIC_MIGEMO */
++
++# define MIGEMO_PROC FARPROC
++# ifndef DYNAMIC_MIGEMO_DLL
++#  define DYNAMIC_MIGEMO_DLL "migemo.dll"
++# endif
++
++#  define MIGEMO_OPINDEX_OR 0
++#  define MIGEMO_OPINDEX_NEST_IN 1
++#  define MIGEMO_OPINDEX_NEST_OUT 2
++#  define MIGEMO_OPINDEX_SELECT_IN 3
++#  define MIGEMO_OPINDEX_SELECT_OUT 4
++#  define MIGEMO_OPINDEX_NEWLINE 5
++
++typedef struct _migemo migemo;
++typedef int (*MIGEMO_PROC_CHAR2INT)(unsigned char*, unsigned int*);
++typedef int (*MIGEMO_PROC_INT2CHAR)(unsigned int, unsigned char*);
++static HANDLE hDllMigemo = NULL;
++migemo* (__stdcall *dll_migemo_open)(char*);
++void (__stdcall *dll_migemo_close)(migemo*);
++unsigned char* (__stdcall *dll_migemo_query)(migemo*, unsigned char*);
++void (__stdcall *dll_migemo_release)(migemo*, unsigned char*);
++int (__stdcall *dll_migemo_set_operator)(migemo*, int index, unsigned char* op);
++const unsigned char* (__stdcall *dll_migemo_get_operator)(migemo*, int index);
++void (__stdcall *dll_migemo_setproc_char2int)(migemo*, MIGEMO_PROC_CHAR2INT);
++void (__stdcall *dll_migemo_setproc_int2char)(migemo*, MIGEMO_PROC_INT2CHAR);
++
++#  define migemo_open dll_migemo_open
++#  define migemo_close dll_migemo_close
++#  define migemo_query dll_migemo_query
++#  define migemo_release dll_migemo_release
++#  define migemo_set_operator dll_migemo_set_operator
++#  define migemo_get_operator dll_migemo_get_operator
++#  define migemo_setproc_char2int dll_migemo_setproc_char2int
++#  define migemo_setproc_int2char dll_migemo_setproc_int2char
++
++    static void
++dyn_migemo_end()
++{
++    if (hDllMigemo)
++    {
++	FreeLibrary(hDllMigemo);
++	hDllMigemo = NULL;
++    }
++}
++
++    static int
++dyn_migemo_init()
++{
++    static struct { char* name; MIGEMO_PROC* ptr; } migemo_func_table[] = {
++	{"migemo_open", (MIGEMO_PROC*)&dll_migemo_open},
++	{"migemo_close", (MIGEMO_PROC*)&dll_migemo_close},
++	{"migemo_query", (MIGEMO_PROC*)&dll_migemo_query},
++	{"migemo_release", (MIGEMO_PROC*)&dll_migemo_release},
++	{"migemo_set_operator", (MIGEMO_PROC*)&dll_migemo_set_operator},
++	{"migemo_get_operator", (MIGEMO_PROC*)&dll_migemo_get_operator},
++	{"migemo_setproc_char2int", (MIGEMO_PROC*)&dll_migemo_setproc_char2int},
++	{"migemo_setproc_int2char", (MIGEMO_PROC*)&dll_migemo_setproc_int2char},
++	{NULL, NULL},
++    };
++    int i;
++
++    if (hDllMigemo)
++	return 1;
++    if (!(hDllMigemo = LoadLibraryEx(DYNAMIC_MIGEMO_DLL, NULL, 0)))
++	return 0;
++    for (i = 0; migemo_func_table[i].ptr; ++i)
++    {
++	if (!(*migemo_func_table[i].ptr = GetProcAddress(hDllMigemo,
++			migemo_func_table[i].name)))
++	{
++	    dyn_migemo_end();
++	    return 0;
++	}
++    }
++    return 1;
++}
++# endif /* DYNAMIC_MIGEMO */
++
++    static int 
++vimigemo_char2int(unsigned char* p, unsigned int* code)
++{
++    unsigned int ch = *p;
++    int len = 1;
++
++#ifdef FEAT_MBYTE
++    if (has_mbyte)
++    {
++	ch = (*mb_ptr2char)(p);
++	len = (*mb_ptr2len)(p);
++    }
++#endif
++    if (code)
++	*code = ch;
++    return len;
++}
++
++    static int
++vimigemo_int2char(unsigned int code, unsigned char* buf)
++{
++    int len;
++
++#ifdef FEAT_MBYTE
++    if (has_mbyte && (len = (*mb_char2len)(code)) != 1)
++    {
++	if (buf)
++	    (*mb_char2bytes)(code, buf);
++    }
++    else
++#endif
++    {
++	len = 0;
++	switch (code)
++	{
++	    case '\\':
++	    case '.': case '*': case '^': case '$': case '/':
++	    case '[': case ']': case '~':
++		if (buf)
++		    buf[len] = '\\';
++		++len;
++	    default:
++		if (buf)
++		    buf[len] = (unsigned char)(code & 0xFF);
++		++len;
++		break;
++	}
++    }
++
++    return len;
++}
++
++    int
++migemo_enabled()
++{
++    return
++#ifdef DYNAMIC_MIGEMO
++	dyn_migemo_init()
++#else
++	1
++#endif
++	;
++}
++
++static migemo* migemo_object = NULL;
++static int migemo_tryload = 0;
++
++    static void
++init_migemo()
++{
++# ifdef DYNAMIC_MIGEMO
++    if (!dyn_migemo_init())
++	return;
++# endif
++    if (migemo_tryload || migemo_object)
++	return;
++
++    migemo_tryload = 1;
++    migemo_object = migemo_open(p_migdict);
++
++    if (!migemo_object)
++	return;
++
++    migemo_set_operator(migemo_object, MIGEMO_OPINDEX_OR, "\\|");
++    migemo_set_operator(migemo_object, MIGEMO_OPINDEX_NEST_IN, "\\%(");
++    migemo_set_operator(migemo_object, MIGEMO_OPINDEX_NEST_OUT, "\\)");
++    migemo_set_operator(migemo_object, MIGEMO_OPINDEX_NEST_OUT, "\\)");
++    migemo_set_operator(migemo_object, MIGEMO_OPINDEX_NEWLINE, "\\_s*");
++    migemo_setproc_int2char(migemo_object, vimigemo_int2char);
++    migemo_setproc_char2int(migemo_object, vimigemo_char2int);
++}
++
++    void
++reset_migemo(int lastcall)
++{
++    if (migemo_object)
++	migemo_close(migemo_object);
++    migemo_object = NULL;
++    migemo_tryload = 0;
++# ifdef DYNAMIC_MIGEMO
++    if (lastcall)
++	dyn_migemo_end();
++# endif
++}
++
++    char_u*
++query_migemo(char_u* str)
++{
++    char_u *retval = NULL;
++
++    if (str)
++    {
++	init_migemo();
++	if (migemo_object)
++	{
++	    char *query = migemo_query(migemo_object, str);
++
++	    if (query != NULL)
++	    {
++		retval = vim_strsave(query);
++		migemo_release(migemo_object, query);
++	    }
++	}
++    }
++    return retval ? retval : str;
++}
++
++    int
++check_migemo_able_string(char_u* str)
++{
++    size_t len;
++
++    len = STRLEN(str);
++    /* Disabled because of adding query size limitation. */
++#if 0
++    if (len == 1 && vim_strchr("kstnKSTN", str[0]))
++	return 0;
++#endif
++    /* TODO: Incomplete method.  To be improved. */
++    if (len >= 1 && (vim_strchr(str, '^')))
++	return 0;
++    if (len >= 2 && !STRNCMP(str, "\\<", 2))
++	return 0;
++    /* Search for multibyte char */
++#ifdef FEAT_MBYTE
++    if (has_mbyte)
++	while (*str)
++	{
++	    if ((*mb_ptr2len)(str) > 1)
++		return 0;
++	    ++str;
++	}
++#endif
++    return 1;
++}
++
++    static int
++searchit_migemo(win, buf, pos, dir, str, count, options, pat_use, stop_lnum,
++	tm, did)
++    win_T	*win;
++    buf_T	*buf;
++    pos_T	*pos;
++    int		dir;
++    char_u	*str;
++    long	count;
++    int		options;
++    int		pat_use;
++    linenr_T	stop_lnum;	/* stop after this line number when != 0 */
++    proftime_T*	tm;
++    int		*did;
++{
++    int retval = 0;
++    int didval = 0;
++
++    if (str && buf && STRLEN(p_migdict) > 0 && check_migemo_able_string(str))
++    {
++	init_migemo();
++	if (migemo_object)
++	{
++	    char	*query;
++	    char_u	*newstr = NULL;
++	    
++	    /* Remove backslash in str */
++	    if (vim_strchr(str, '\\') && (newstr = vim_strsave(str)))
++	    {
++		char_u *p, *end = newstr + STRLEN(newstr);
++
++		for (p = newstr; p[0] != NUL; ++p)
++		{
++		    if ((p = vim_strchr(p, '\\')) == NULL)
++			break;
++		    mch_memmove(p, p + 1, end - p);
++		}
++		str = newstr;
++	    }
++	    query = migemo_query(migemo_object, str);
++	    if (query && STRLEN(query) < MIGEMO_QUERY_MAXSIZE)
++	    {
++		retval = searchit(win, buf, pos, dir, query, count, options,
++			pat_use, stop_lnum, tm);
++		didval = 1;
++	    }
++	    if (query)
++		migemo_release(migemo_object, query);
++	    if (newstr)
++		vim_free(newstr);
++	}
++    }
++
++    if (did)
++	*did = didval;
++    return retval;
++}
++#endif /* USE_MIGEMO */
++
+ /*
+  * Highest level string search function.
+  * Search for the 'count'th occurrence of pattern 'pat' in direction 'dirc'
+@@ -1350,12 +1649,30 @@
+ 	     lrFswap(searchstr,0);
+ #endif
+ 
++#ifdef USE_MIGEMO
++	{
++	    int did_migemo = 0;
++	    if (options & SEARCH_MIGEMO)
++		c = searchit_migemo(
++			curwin, curbuf, &pos,
++			dirc == '/' ? FORWARD : BACKWARD,
++			searchstr, count, spats[0].off.end + (options &
++			    (SEARCH_KEEP + SEARCH_PEEK + SEARCH_HIS
++			     + SEARCH_MSG + SEARCH_START
++			     + ((pat != NULL && *pat == ';') ?
++				 0 : SEARCH_NOOF))),
++			RE_LAST, (linenr_T)0, tm, &did_migemo);
++	    if (!did_migemo)
++#endif /* USE_MIGEMO */
+ 	c = searchit(curwin, curbuf, &pos, dirc == '/' ? FORWARD : BACKWARD,
+ 		searchstr, count, spats[0].off.end + (options &
+ 		       (SEARCH_KEEP + SEARCH_PEEK + SEARCH_HIS
+ 			+ SEARCH_MSG + SEARCH_START
+ 			+ ((pat != NULL && *pat == ';') ? 0 : SEARCH_NOOF))),
+ 		RE_LAST, (linenr_T)0, tm);
++#ifdef USE_MIGEMO
++	}
++#endif /* USE_MIGEMO */
+ 
+ 	if (dircp != NULL)
+ 	    *dircp = dirc;	/* restore second '/' or '?' for normal_cmd() */
+@@ -2607,7 +2924,12 @@
+ 	/* go back to the previous non-blank char */
+ 	found_dot = FALSE;
+ 	while ((c = gchar_pos(&pos)) == ' ' || c == '\t' ||
+-	     (dir == BACKWARD && vim_strchr((char_u *)".!?)]\"'", c) != NULL))
++	     (dir == BACKWARD && vim_strchr((char_u *)".!?)]\"'", c) != NULL)
++#ifdef FEAT_MBYTE
++	     || (dir == BACKWARD && (*mb_char2len)(c) > 1
++		 && mb_get_class(ml_get_pos(&pos)) == 1)
++#endif
++	     )
+ 	{
+ 	    if (vim_strchr((char_u *)".!?", c) != NULL)
+ 	    {
+@@ -2657,6 +2979,24 @@
+ 		    break;
+ 		}
+ 	    }
++#ifdef FEAT_MBYTE
++	    if (has_mbyte && (*mb_char2len)(c) > 1
++		    && mb_get_class(ml_get_pos(&pos)) == 1)
++	    {
++		tpos = pos;
++		for (;;)
++		{
++		    c = inc(&tpos);
++		    if (c == -1 || (*mb_char2len)(c) <= 1
++			    || mb_get_class(ml_get_pos(&tpos)) != 1)
++			break;
++		}
++		pos = tpos;
++		if (gchar_pos(&pos) == NUL)
++		    inc(&pos);
++		break;
++	    }
++#endif
+ 	    if ((*func)(&pos) == -1)
+ 	    {
+ 		if (count)
+diff -r d6c709d07173 src/structs.h
+--- a/src/structs.h	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/structs.h	Sat Sep 03 10:06:10 2011 +0900
+@@ -1526,6 +1526,9 @@
+     int		b_p_lisp;	/* 'lisp' */
+ #endif
+     char_u	*b_p_mps;	/* 'matchpairs' */
++#ifdef USE_MIGEMO
++    int		b_p_migemo;	/* 'migemo' */
++#endif
+     int		b_p_ml;		/* 'modeline' */
+     int		b_p_ml_nobin;	/* b_p_ml saved for binary mode */
+     int		b_p_ma;		/* 'modifiable' */
+diff -r d6c709d07173 src/version.c
+--- a/src/version.c	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/version.c	Sat Sep 03 10:06:10 2011 +0900
+@@ -255,6 +255,7 @@
+ #else
+ 	"-gettext",
+ #endif
++	"+guess_encode",
+ #ifdef FEAT_HANGULIN
+ 	"+hangul_input",
+ #else
+@@ -284,6 +285,7 @@
+ #else
+ 	"-keymap",
+ #endif
++	"+kaoriya",
+ #ifdef FEAT_LANGMAP
+ 	"+langmap",
+ #else
+@@ -328,6 +330,15 @@
+ #else
+ 	"-menu",
+ #endif
++#ifdef USE_MIGEMO
++# ifdef DYNAMIC_MIGEMO
++	"+migemo/dyn",
++# else
++	"+migemo",
++# endif
++#else
++	"-migemo",
++#endif
+ #ifdef FEAT_SESSION
+ 	"+mksession",
+ #else
+diff -r d6c709d07173 src/vim.h
+--- a/src/vim.h	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/vim.h	Sat Sep 03 10:06:10 2011 +0900
+@@ -547,12 +547,21 @@
+  * Check input method control.
+  */
+ #if defined(FEAT_XIM) \
++    || defined(FEAT_UIMFEP) \
+     || (defined(FEAT_GUI) && (defined(FEAT_MBYTE_IME) || defined(GLOBAL_IME))) \
+     || (defined(FEAT_GUI_MAC) && defined(FEAT_MBYTE))
+ # define USE_IM_CONTROL
+ #endif
+ 
+ /*
++ * Whether 'ambiwidth' supports "auto".  Currently, only for Win32.
++ */
++#if defined(FEAT_MBYTE) && defined(FEAT_GUI) && \
++    (defined(FEAT_GUI_W32))
++# define USE_AMBIWIDTH_AUTO
++#endif
++
++/*
+  * For dynamically loaded gettext library.  Currently, only for Win32.
+  */
+ #ifdef DYNAMIC_GETTEXT
+@@ -906,6 +915,9 @@
+ #define SEARCH_MARK  0x200  /* set previous context mark */
+ #define SEARCH_KEEP  0x400  /* keep previous search pattern */
+ #define SEARCH_PEEK  0x800  /* peek for typed char, cancel search */
++#ifdef USE_MIGEMO
++# define SEARCH_MIGEMO	0x1000	/* use migemo for search */
++#endif
+ 
+ /* Values for find_ident_under_cursor() */
+ #define FIND_IDENT	1	/* find identifier (word) */
+diff -r d6c709d07173 src/vim.rc
+--- a/src/vim.rc	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/vim.rc	Sat Sep 03 10:06:10 2011 +0900
+@@ -21,7 +21,7 @@
+ //
+ // Icons
+ //
+-IDR_VIM		ICON "vim.ico"
++IDR_VIM		ICON "vim2.ico"
+ 
+ #ifdef FEAT_GUI_W32
+ IDR_VIM_ERROR	ICON "vim_error.ico"
+diff -r d6c709d07173 src/vim2.ico
+Binary file src/vim2.ico has changed
+diff -r d6c709d07173 src/vim3.ico
+Binary file src/vim3.ico has changed
+diff -r d6c709d07173 src/xxd/Make_mvc.mak
+--- a/src/xxd/Make_mvc.mak	Fri Sep 02 14:18:20 2011 +0200
++++ b/src/xxd/Make_mvc.mak	Sat Sep 03 10:06:10 2011 +0900
+@@ -5,6 +5,7 @@
+ 
+ xxd.exe: xxd.c
+      cl /nologo -DWIN32 xxd.c
++     IF EXIST $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+ 
+ # This was for an older compiler
+ #    cl /nologo -DWIN32 xxd.c /link setargv.obj
